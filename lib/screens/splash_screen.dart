@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // <--- AJOUT IMPORTANT
 import '../services/auth_services.dart';
 
 // Importe tous tes écrans ici
-import 'POSScreen.dart';
 import 'dashboard_screen.dart';
 import 'login_screen.dart';
-import 'taxation_screen.dart';      // <--- AJOUT
-import 'EmbarquementScreen.dart';   // <--- AJOUT
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

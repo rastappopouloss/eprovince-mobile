@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/db_service.dart';
-import '../services/sync_service.dart'; // Optionnel si tu veux sync direct
 
 class CreateAssujettiScreen extends StatefulWidget {
   const CreateAssujettiScreen({super.key});

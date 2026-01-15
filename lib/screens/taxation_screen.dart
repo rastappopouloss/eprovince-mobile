@@ -1,4 +1,3 @@
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_services.dart';
@@ -51,7 +50,6 @@ class _TaxationScreenState extends State<TaxationScreen> {
   bool _isSaving = false;
 
   // Configuration Province & Taux
-  String _provinceNom = "";
   String _provinceEntete = "";
   String _provinceCode = "";
   double _tauxProvince = 1.0;

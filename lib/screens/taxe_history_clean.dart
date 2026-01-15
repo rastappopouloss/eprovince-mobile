@@ -21,7 +21,6 @@ class _TaxeHistoryScreenState extends State<TaxeHistoryScreen> with SingleTicker
 
   // Contexte pour l'impression
   String _agentName = "Agent";
-  String _provinceNom = "KINSHASA";
   String _provinceEntete = "";
   String _provinceCode = "";
   /*
@@ -155,7 +154,6 @@ class _TaxeHistoryScreenState extends State<TaxeHistoryScreen> with SingleTicker
 
                     // LISTE DES DÉTAILS (CORRIGÉE)
                     ...lines.map((l) {
-                      double ligneTotal = (l['total'] as num).toDouble();
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Row(

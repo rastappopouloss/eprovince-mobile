@@ -38,7 +38,6 @@ class _EmbarquementScreenState extends State<EmbarquementScreen> {
   // Variables Imprimante
   final PrinterService _printerService = PrinterService();
   List<BluetoothDevice> _devices = [];
-  BluetoothDevice? _selectedDevice;
   bool _connected = false;
 
   // COULEUR DU THÈME AÉROPORT

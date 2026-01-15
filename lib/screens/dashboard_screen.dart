@@ -18,11 +18,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Données Agent
   String _agentName = "Chargement...";
   String _accessType = "PEAGE";
-  int _agentId = 0;
 
   // Données Stats
   bool _isLoading = true;
-  double _todayTotal = 0.0;
   int _todayCount = 0;
   List<Map<String, dynamic>> _weeklyData = [];
 
