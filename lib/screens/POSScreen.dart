@@ -44,6 +44,7 @@ class _POSScreenState extends State<POSScreen> {
   // Variables Imprimante
   final PrinterService _printerService = PrinterService();
   List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _selectedDevice;
   bool _connected = false;
 
   @override

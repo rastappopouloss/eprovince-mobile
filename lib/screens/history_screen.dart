@@ -19,6 +19,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // Contexte Session (Pour l'impression)
   String _accessType = 'PEAGE';
+  int _agentId = 0;
   String _agentName = "Agent";
   String _siteNom = "Site";
   String _provinceNom = "KINSHASA";
