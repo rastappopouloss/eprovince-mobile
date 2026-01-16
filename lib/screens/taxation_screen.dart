@@ -77,9 +77,14 @@ class _TaxationScreenState extends State<TaxationScreen> {
     final db = DBService.instance;
     final prefs = await SharedPreferences.getInstance();
 
-    final art = await db.getArticles();
+    // Récupérer l'ID de l'agent connecté
+    int currentAgentId = prefs.getInt('agent_id') ?? 0;
+    // (Assurez-vous que vous sauvegardez bien 'config_province_id' lors du login ou du paramétrage)
+    int currentProvinceId = prefs.getInt('config_province_id') ?? 0;
+
+    final art = await db.getArticles(currentProvinceId);
     final fisc = await db.getFiscals();
-    final assuj = await db.getAllAssujettis();
+    final assuj = await db.getAllAssujettis(currentAgentId);
 
     if (mounted) {
       setState(() {
@@ -550,7 +555,9 @@ class _TaxationScreenState extends State<TaxationScreen> {
                                 children: [
                                   Expanded(
                                     child: DropdownButtonFormField<int>(
-                                      value: _selectedAssujettiId,
+                                      value: _assujettisList.any((e) => e['id'] == _selectedAssujettiId)
+                                          ? _selectedAssujettiId
+                                          : null,
                                       isExpanded: true,
                                       decoration: _buildInputDeco("Nom de l'assujetti", Icons.person),
                                       items: _assujettisList.map((e) => DropdownMenuItem(value: e['id'] as int, child: Text("${e['nom']} ${e['postnom'] ?? ''}", overflow: TextOverflow.ellipsis))).toList(),
@@ -585,7 +592,9 @@ class _TaxationScreenState extends State<TaxationScreen> {
                                   Expanded(
                                     flex: 2,
                                     child: DropdownButtonFormField<int>(
-                                      value: _selectedFiscal,
+                                      value: _fiscals.any((e) => e['id'] == _selectedFiscal)
+                                          ? _selectedFiscal
+                                          : null,
                                       isExpanded: true,
                                       decoration: _buildInputDeco("Année", Icons.calendar_today),
                                       items: _fiscals.map((e) => DropdownMenuItem(value: e['id'] as int, child: Text(e['nom'].toString()))).toList(),

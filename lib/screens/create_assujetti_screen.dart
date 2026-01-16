@@ -85,6 +85,7 @@ class _CreateAssujettiScreenState extends State<CreateAssujettiScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
+      int currentAgentId = prefs.getInt('agent_id') ?? 0;
 
       // Récupération des configs de l'agent
       int provId = prefs.getInt('config_province_id') ?? 1;
@@ -102,7 +103,7 @@ class _CreateAssujettiScreenState extends State<CreateAssujettiScreen> {
         'categorie': _selectedCategorie, // Nouveau champ
 
         'email': '',
-
+        'user_id': currentAgentId,
         // GÉOGRAPHIE COMPLÈTE
         'province_id': provId,
         'ville_id': villeId,

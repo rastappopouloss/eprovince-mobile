@@ -79,7 +79,7 @@ class DBService {
         province_id INTEGER,
         territoire_id INTEGER, 
         quartier_id INTEGER,   
-        
+        user_id INTEGER,
         type INTEGER DEFAULT 1,         
         categorie TEXT DEFAULT 'SPONTANE', 
         nationalite TEXT,               
@@ -130,7 +130,17 @@ class DBService {
 
   // --- Helpers pour charger les listes ---
   Future<List<Map<String, dynamic>>> getFiscals() async => await (await database).query('fiscals');
-  Future<List<Map<String, dynamic>>> getArticles() async => await (await database).query('articles');
+  //Future<List<Map<String, dynamic>>> getArticles() async => await (await database).query('articles');
+  // APRÈS : Avec filtre par province
+  Future<List<Map<String, dynamic>>> getArticles(int provinceId) async {
+    final db = await database;
+    return await db.query(
+        'articles',
+        where: 'province_id = ?', // On filtre ici
+        whereArgs: [provinceId],
+        orderBy: 'activite ASC' // Bonus : on trie par ordre alphabétique pour faire joli
+    );
+  }
   Future<List<Map<String, dynamic>>> getNatures(int articleId) async =>
       await (await database).query('natures', where: 'article_id = ?', whereArgs: [articleId]);
 
@@ -324,8 +334,8 @@ class DBService {
     if (type == 'TAXE') {
       // 1. On compte les tickets (Taxes)
       final resCount = await db.rawQuery(
-          'SELECT COUNT(*) as cnt FROM taxes WHERE user_id = ? AND substr(datecreate, 1, 10) = ?',
-          [agentId, todayStr]
+          "SELECT COUNT(*) as cnt FROM taxes WHERE user_id = ? AND datecreate LIKE '$todayStr%'",
+          [agentId]
       );
       todayCount = (resCount.first['cnt'] as num?)?.toInt() ?? 0;
 
@@ -400,6 +410,105 @@ class DBService {
       'weekly_data': weeklyData
     };
   }
+  // --- STATISTIQUES POUR DASHBOARD (CORRIGÉ & ROBUSTE) ---
+  /*Future<Map<String, dynamic>> getAgentStats(int agentId, String type) async {
+    final db = await database;
+
+    String table = "";
+    String dateCol = "datecreate"; // La colonne contenant la date
+
+    if (type == 'PEAGE') table = 'peages';
+    else if (type == 'EMBARQUEMENT') table = 'embarquements';
+    else if (type == 'TAXE') table = 'taxes';
+
+    DateTime now = DateTime.now();
+    // Format YYYY-MM-DD pour la recherche SQL
+    String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    double totalFC = 0.0;
+    double totalUSD = 0.0;
+    int todayCount = 0;
+    List<Map<String, dynamic>> weeklyData = [];
+
+    // --- A. CALCUL DU JOUR (AUJOURD'HUI) ---
+    if (type == 'TAXE') {
+      // 1. On compte les tickets (Taxes)
+      // Utilisation de LIKE '$todayStr%' pour être plus robuste sur le format de date
+      final resCount = await db.rawQuery(
+          "SELECT COUNT(*) as cnt FROM taxes WHERE user_id = ? AND datecreate LIKE '$todayStr%'",
+          [agentId]
+      );
+      todayCount = (resCount.first['cnt'] as num?)?.toInt() ?? 0;
+
+      // 2. On somme la colonne 'total_fc' de la table ACTES (Peu importe la devise de paiement)
+      // Cela garantit que même si payé en USD, on a la valeur en FC
+      final resFC = await db.rawQuery('''
+        SELECT SUM(l.total_fc) as total
+        FROM taxes t
+        JOIN actes l ON l.taxe_local_id = t.id 
+        WHERE t.user_id = ? AND t.datecreate LIKE '$todayStr%'
+      ''', [agentId]);
+      totalFC = (resFC.first['total'] as num?)?.toDouble() ?? 0.0;
+
+      // 3. On somme la colonne 'total_usd' de la table ACTES
+      final resUSD = await db.rawQuery('''
+        SELECT SUM(l.total_usd) as total
+        FROM taxes t
+        JOIN actes l ON l.taxe_local_id = t.id 
+        WHERE t.user_id = ? AND t.datecreate LIKE '$todayStr%'
+      ''', [agentId]);
+      totalUSD = (resUSD.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    } else {
+      // PEAGE & EMBARQUEMENT
+      // Ici on garde l'ancienne logique car ces tables n'ont pas forcément total_fc/total_usd (à vérifier)
+      // Si elles ne les ont pas, on se base sur la devise.
+
+      final resCount = await db.rawQuery(
+          "SELECT COUNT(*) as cnt FROM $table WHERE user_id = ? AND $dateCol LIKE '$todayStr%'",
+          [agentId]
+      );
+      todayCount = (resCount.first['cnt'] as num?)?.toInt() ?? 0;
+
+      // Somme FC (Basé sur la devise déclarée)
+      final resFC = await db.rawQuery(
+          "SELECT SUM(montant) as total FROM $table WHERE user_id = ? AND devise = 'FC' AND $dateCol LIKE '$todayStr%'",
+          [agentId]
+      );
+      totalFC = (resFC.first['total'] as num?)?.toDouble() ?? 0.0;
+
+      // Somme USD
+      final resUSD = await db.rawQuery(
+          "SELECT SUM(montant) as total FROM $table WHERE user_id = ? AND devise = 'USD' AND $dateCol LIKE '$todayStr%'",
+          [agentId]
+      );
+      totalUSD = (resUSD.first['total'] as num?)?.toDouble() ?? 0.0;
+    }
+
+    // --- B. CALCUL SEMAINE (Graphique) ---
+    for (int i = 6; i >= 0; i--) {
+      DateTime d = now.subtract(Duration(days: i));
+      String dayStr = "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
+      String dayLabel = "${d.day}/${d.month}";
+
+      final resDay = await db.rawQuery(
+          "SELECT COUNT(*) as cnt FROM $table WHERE user_id = ? AND $dateCol LIKE '$dayStr%'",
+          [agentId]
+      );
+
+      weeklyData.add({
+        'day': dayLabel,
+        'amount': (resDay.first['cnt'] as num?)?.toDouble() ?? 0.0
+      });
+    }
+
+    return {
+      'today_count': todayCount,
+      'total_fc': totalFC,
+      'total_usd': totalUSD,
+      'weekly_data': weeklyData
+    };
+  }*/
   // --- MÉTHODES PÉAGE ---
 
   Future<int> insertPeage(Map<String, dynamic> row) async {
@@ -470,7 +579,7 @@ class DBService {
 
   // Récupérer la liste pour le Dropdown
   // Récupérer la liste COMPLÈTE pour le Dropdown et l'impression
-  Future<List<Map<String, dynamic>>> getAllAssujettis() async {
+  Future<List<Map<String, dynamic>>> getAllAssujettis(int userId) async {
     final db = await database;
 
     // CORRECTION : On fait des LEFT JOIN pour récupérer les noms
@@ -481,8 +590,9 @@ class DBService {
       FROM assujettis a
       LEFT JOIN territoires t ON a.territoire_id = t.id
       LEFT JOIN quartiers q ON a.quartier_id = q.id
+      WHERE a.user_id = ?
       ORDER BY a.id DESC
-    ''');
+    ''', [userId]);
   }
 
   // Récupérer tous les territoires

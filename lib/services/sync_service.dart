@@ -183,7 +183,10 @@ class SyncService {
           await txn.delete('articles');
           await txn.delete('natures');
 
-
+          // AJOUTEZ CECI POUR FORCER LE NETTOYAGE ET LE RECHARGEMENT PROPRE
+          // Attention : Cela efface les assujettis locaux non synchronisés si on ne fait pas gaffe.
+          // Pour être sûr, on supprime seulement ceux qui sont DÉJÀ synchronisés (is_synced = 1)
+          await txn.delete('assujettis', where: 'is_synced = 1');
 
           Batch batch = txn.batch();
 
@@ -253,6 +256,10 @@ class SyncService {
           List assujettis = data['assujettis'] ?? [];
           print("📊 Assujettis reçus : ${assujettis.length}");
 
+          // 1. Récupérer l'ID de l'agent connecté pour lier les données téléchargées
+          final prefs = await SharedPreferences.getInstance();
+          int currentAgentId = prefs.getInt('agent_id') ?? 0;
+
           for(var item in assujettis) {
             int serverId = item['id'];
 
@@ -311,6 +318,7 @@ class SyncService {
                 'ville_id': item['ville_id'],
                 'territoire_id': item['territoire_id'],
                 'quartier_id': item['quartier_id'],
+                'user_id': currentAgentId,
                 'is_synced': 1
               },
               conflictAlgorithm: ConflictAlgorithm.replace,
